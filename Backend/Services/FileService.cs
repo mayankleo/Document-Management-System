@@ -13,7 +13,7 @@ public class FileService : IFileService
         _env = env;
         var basePath = env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot");
         Directory.CreateDirectory(basePath);
-        _uploadsPath = Path.Combine(basePath,(config["FileStorage:UploadsPath"]));
+        _uploadsPath = Path.Combine(basePath, (config["FileStorage:UploadsPath"]));
         _maxFileSize = (long.Parse(config["FileStorage:MaxFileSizeMB"] ?? "10")) * 1024 * 1024;
 
         if (!Directory.Exists(_uploadsPath))
@@ -28,11 +28,8 @@ public class FileService : IFileService
         var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
         var filePath = Path.Combine(_uploadsPath, fileName);
 
-        using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            await file.CopyToAsync(stream);
-        }
-
+        using var stream = new FileStream(filePath, FileMode.Create);
+        await file.CopyToAsync(stream);
         return fileName;
     }
 
@@ -47,10 +44,9 @@ public class FileService : IFileService
         return false;
     }
 
-    public string GetFileUrl(string fileName)
-    {
-        return $"/uploads/{fileName}";
-    }
+    public string GetFileUrl(string fileName) => $"/uploads/{fileName}";
+
+    public string GetPhysicalFilePath(string fileName) => Path.Combine(_uploadsPath, fileName);
 }
 
 

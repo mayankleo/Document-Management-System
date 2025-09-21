@@ -6,6 +6,8 @@ public interface IFileService
     Task<string> SaveFileAsync(IFormFile file);
     Task<bool> DeleteFileAsync(string fileName);
     string GetFileUrl(string fileName);
+    string GetPhysicalFilePath(string fileName);
 }
+
 
 

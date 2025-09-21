@@ -66,7 +66,7 @@ public class AppDbContext : IDisposable
                 FileName VARCHAR(255) NOT NULL,
                 FilePath VARCHAR(500) NOT NULL,
                 ContentType VARCHAR(100) NOT NULL,
-                Size BIGINT UNSIGNED NOT NULL,
+                Size BIGINT NOT NULL,
                 MajorHeadId INT NOT NULL,
                 MinorHeadId INT NOT NULL,
                 Remarks TEXT,
@@ -214,6 +214,118 @@ public class AppDbContext : IDisposable
             transaction.Rollback();
             throw;
         }
+    }
+
+    public async Task<Document?> GetDocumentByIdAsync(int id)
+    {
+        var sql = @"SELECT d.*, 
+                           mh.Id   AS MH_Id, mh.Name AS MH_Name,
+                           mi.Id   AS MI_Id, mi.MajorHeadId AS MI_MajorHeadId, mi.Name AS MI_Name,
+                           t.Id    AS Tag_Id, t.Name AS Tag_Name
+                    FROM Documents d
+                    JOIN MajorHeads mh ON d.MajorHeadId = mh.Id
+                    JOIN MinorHeads mi ON d.MinorHeadId = mi.Id
+                    LEFT JOIN DocumentTags dt ON d.Id = dt.DocumentId
+                    LEFT JOIN Tags t ON dt.TagId = t.Id
+                    WHERE d.Id = @Id";
+
+        var lookup = new Dictionary<int, Document>();
+        var rows = await _connection.QueryAsync(sql, new { Id = id });
+        foreach (var row in rows)
+        {
+            int docId = row.Id;
+            if (!lookup.TryGetValue(docId, out var doc))
+            {
+                doc = new Document
+                {
+                    Id = row.Id,
+                    FileName = row.FileName,
+                    FilePath = row.FilePath,
+                    ContentType = row.ContentType,
+                    Size = row.Size,
+                    MajorHeadId = row.MajorHeadId,
+                    MinorHeadId = row.MinorHeadId,
+                    Remarks = row.Remarks ?? string.Empty,
+                    DocumentDate = row.DocumentDate,
+                    UploadedAt = row.UploadedAt,
+                    UploadedBy = row.UploadedBy,
+                    MajorHead = new MajorHead { Id = row.MH_Id, Name = row.MH_Name },
+                    MinorHead = new MinorHead { Id = row.MI_Id, MajorHeadId = row.MI_MajorHeadId, Name = row.MI_Name },
+                    DocumentTags = new List<DocumentTag>()
+                };
+                lookup[docId] = doc;
+            }
+            if (row.Tag_Id != null)
+            {
+                int tagId = row.Tag_Id;
+                if (!doc.DocumentTags.Any(dt => dt.TagId == tagId))
+                {
+                    doc.DocumentTags.Add(new DocumentTag
+                    {
+                        DocumentId = doc.Id,
+                        TagId = tagId,
+                        Tag = new Tag { Id = tagId, Name = row.Tag_Name }
+                    });
+                }
+            }
+        }
+        return lookup.Values.FirstOrDefault();
+    }
+
+    public async Task<IEnumerable<Document>> GetAllDocumentsAsync()
+    {
+        var sql = @"SELECT d.*, 
+                           mh.Id   AS MH_Id, mh.Name AS MH_Name,
+                           mi.Id   AS MI_Id, mi.MajorHeadId AS MI_MajorHeadId, mi.Name AS MI_Name,
+                           t.Id    AS Tag_Id, t.Name AS Tag_Name
+                    FROM Documents d
+                    JOIN MajorHeads mh ON d.MajorHeadId = mh.Id
+                    JOIN MinorHeads mi ON d.MinorHeadId = mi.Id
+                    LEFT JOIN DocumentTags dt ON d.Id = dt.DocumentId
+                    LEFT JOIN Tags t ON dt.TagId = t.Id
+                    ORDER BY d.UploadedAt DESC, d.Id DESC";
+
+        var lookup = new Dictionary<int, Document>();
+        var rows = await _connection.QueryAsync(sql);
+        foreach (var row in rows)
+        {
+            int docId = row.Id;
+            if (!lookup.TryGetValue(docId, out var doc))
+            {
+                doc = new Document
+                {
+                    Id = row.Id,
+                    FileName = row.FileName,
+                    FilePath = row.FilePath,
+                    ContentType = row.ContentType,
+                    Size = row.Size,
+                    MajorHeadId = row.MajorHeadId,
+                    MinorHeadId = row.MinorHeadId,
+                    Remarks = row.Remarks ?? string.Empty,
+                    DocumentDate = row.DocumentDate,
+                    UploadedAt = row.UploadedAt,
+                    UploadedBy = row.UploadedBy,
+                    MajorHead = new MajorHead { Id = row.MH_Id, Name = row.MH_Name },
+                    MinorHead = new MinorHead { Id = row.MI_Id, MajorHeadId = row.MI_MajorHeadId, Name = row.MI_Name },
+                    DocumentTags = new List<DocumentTag>()
+                };
+                lookup[docId] = doc;
+            }
+            if (row.Tag_Id != null)
+            {
+                int tagId = row.Tag_Id;
+                if (!doc.DocumentTags.Any(dt => dt.TagId == tagId))
+                {
+                    doc.DocumentTags.Add(new DocumentTag
+                    {
+                        DocumentId = doc.Id,
+                        TagId = tagId,
+                        Tag = new Tag { Id = tagId, Name = row.Tag_Name }
+                    });
+                }
+            }
+        }
+        return lookup.Values;
     }
 
     // ---------- DOCUMENT TAGS ----------
