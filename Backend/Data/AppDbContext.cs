@@ -19,6 +19,7 @@ public class AppDbContext : IDisposable
         _connection = new MySqlConnection(connStr);
         _connection.Open();
         InitializeTables();
+        SeedFromConfiguration(config);
     }
 
     public IDbConnection Connection => _connection;
@@ -29,7 +30,7 @@ public class AppDbContext : IDisposable
         _connection.Execute(@"
             CREATE TABLE IF NOT EXISTS Users (
                 Id INT AUTO_INCREMENT PRIMARY KEY,
-                Username VARCHAR(100) NOT NULL,
+                Username VARCHAR(100) UNIQUE NOT NULL,
                 Mobile VARCHAR(20) NOT NULL UNIQUE,
                 PasswordHash VARCHAR(255),
                 IsAdmin BOOLEAN DEFAULT FALSE,
@@ -88,6 +89,96 @@ public class AppDbContext : IDisposable
             );");
     }
 
+
+    // DBinit
+    private void SeedFromConfiguration(IConfiguration config)
+    {
+        var dbInitSection = config.GetSection("DBinit");
+        if (!dbInitSection.Exists()) return;
+
+        var majorDefs = dbInitSection.GetSection("Majors").Get<List<MajorSeed>>() ?? new();
+        var adminDefs = dbInitSection.GetSection("Admins").Get<List<AdminSeed>>() ?? new();
+
+        using var tx = _connection.BeginTransaction();
+        try
+        {
+            foreach (var major in majorDefs)
+            {
+                if (string.IsNullOrWhiteSpace(major.Name)) continue;
+
+                var majorId = _connection.ExecuteScalar<int?>(
+                    "SELECT Id FROM MajorHeads WHERE Name=@Name LIMIT 1",
+                    new { major.Name }, tx);
+
+                if (majorId == null)
+                {
+                    majorId = _connection.ExecuteScalar<int>(
+                        "INSERT INTO MajorHeads (Name) VALUES (@Name); SELECT LAST_INSERT_ID();",
+                        new { major.Name }, tx);
+                }
+
+                if (major.Minors != null)
+                {
+                    foreach (var minor in major.Minors.Where(m => !string.IsNullOrWhiteSpace(m)))
+                    {
+                        var exists = _connection.ExecuteScalar<int>(
+                            "SELECT COUNT(*) FROM MinorHeads WHERE MajorHeadId=@Mid AND Name=@Name",
+                            new { Mid = majorId, Name = minor.Trim() }, tx);
+                        if (exists == 0)
+                        {
+                            _connection.Execute(
+                                "INSERT INTO MinorHeads (MajorHeadId, Name) VALUES (@Mid, @Name)",
+                                new { Mid = majorId, Name = minor.Trim() }, tx);
+                        }
+                    }
+                }
+            }
+
+            foreach (var admin in adminDefs)
+            {
+                if (string.IsNullOrWhiteSpace(admin.Mobile) ||
+                    string.IsNullOrWhiteSpace(admin.Username) ||
+                    string.IsNullOrWhiteSpace(admin.Password))
+                    continue;
+
+                var userExists = _connection.ExecuteScalar<int>(
+                    "SELECT COUNT(*) FROM Users WHERE Mobile=@Mobile OR Username=@Username",
+                    new { admin.Mobile, admin.Username }, tx);
+
+                if (userExists == 0)
+                {
+                    var hash = BCrypt.Net.BCrypt.HashPassword(admin.Password);
+                    var newUserId = _connection.ExecuteScalar<int>(
+                        @"INSERT INTO Users (Username, Mobile, PasswordHash, IsAdmin)
+                          VALUES (@Username, @Mobile, @PasswordHash, TRUE);
+                          SELECT LAST_INSERT_ID();",
+                        new { Username = admin.Username, Mobile = admin.Mobile, PasswordHash = hash }, tx);
+                }
+            }
+
+            tx.Commit();
+        }
+        catch
+        {
+            tx.Rollback();
+            throw;
+        }
+    }
+
+    private sealed class AdminSeed
+    {
+        public string Mobile { get; set; } = "";
+        public string Username { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+
+    private sealed class MajorSeed
+    {
+        public string Name { get; set; } = "";
+        public List<string> Minors { get; set; } = new();
+    }
+
+
     // ---------- USERS ----------
     public async Task<User?> GetUserByMobileAsync(string mobile)
     {
@@ -133,19 +224,6 @@ public class AppDbContext : IDisposable
     {
         var sql = "SELECT * FROM MajorHeads WHERE Id=@Id";
         return await _connection.QueryFirstOrDefaultAsync<MajorHead>(sql, new { Id = id });
-    }
-
-    public async Task<int> InsertMajorHeadAsync(string name)
-    {
-        var sql = @"INSERT INTO MajorHeads (Name) VALUES (@Name); SELECT LAST_INSERT_ID();";
-        return await _connection.ExecuteScalarAsync<int>(sql, new { Name = name });
-    }
-
-    public async Task<bool> DeleteMajorHeadAsync(int id)
-    {
-        var sql = "DELETE FROM MajorHeads WHERE Id = @Id";
-        var rows = await _connection.ExecuteAsync(sql, new { Id = id });
-        return rows > 0;
     }
 
     public async Task<IEnumerable<MinorHead>> GetMinorHeadsByMajorAsync(int majorHeadId)
