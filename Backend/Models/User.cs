@@ -3,6 +3,7 @@
 public class User
 {
     public int Id { get; set; }
+    public int DepartmentID { get; set; }
     public string Username { get; set; } = null!;
     public string Mobile { get; set; } = null!;
     public string PasswordHash { get; set; } = null!;

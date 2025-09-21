@@ -5,7 +5,7 @@ namespace Backend.Services;
 public interface IAuthService
 {
     Task<string> RequestOtpAsync(string mobile);
-    Task<string?> ValidateOtpAsync(string mobile, string otp);
+    Task<User?> ValidateOtpAsync(string mobile, string otp);
     Task<User?> CreateAdminAsync(string username, string password);
-    Task<User?> UpdateUserAsync(int userId, string? newUsername, string? newPassword);
+    Task<(User user, string token)?> UpdateUserAsync(int userId, string? newUsername, string? newPassword, int? Department);
 }

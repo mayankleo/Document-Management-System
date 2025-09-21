@@ -54,7 +54,7 @@ public class AuthService : IAuthService
         return otp;
     }
 
-    public async Task<string?> ValidateOtpAsync(string mobile, string otp)
+    public async Task<User?> ValidateOtpAsync(string mobile, string otp)
     {
         if (!_otpStore.ContainsKey(mobile) || _otpStore[mobile] != otp)
             return null;
@@ -65,8 +65,7 @@ public class AuthService : IAuthService
 
         _otpStore.Remove(mobile);
 
-        var token = JwtTokenHelper.GenerateToken(user, _cfg);
-        return token;
+        return user;
     }
 
     public async Task<User?> CreateAdminAsync(string username, string password)
@@ -101,7 +100,7 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task<User?> UpdateUserAsync(int userId, string? newUsername, string? newPassword)
+    public async Task<(User user, string token)?> UpdateUserAsync(int userId, string? newUsername, string? newPassword, int? Department)
     {
         var sqlGet = "SELECT * FROM Users WHERE Id = @Id LIMIT 1";
         var user = await _db.Connection.QueryFirstOrDefaultAsync<User>(sqlGet, new { Id = userId });
@@ -123,10 +122,15 @@ public class AuthService : IAuthService
             needUpdate = true;
         }
 
-        if (!needUpdate) return user;
+        if (needUpdate)
+        {
+            var sqlUpdate = "UPDATE Users SET Username = @Username, PasswordHash = @PasswordHash WHERE Id = @Id";
+            await _db.Connection.ExecuteAsync(sqlUpdate, new { Username = user.Username, PasswordHash = user.PasswordHash, Id = user.Id });
+        }
+        var token = JwtTokenHelper.GenerateToken(user, _cfg);
 
-        var sqlUpdate = "UPDATE Users SET Username = @Username, PasswordHash = @PasswordHash WHERE Id = @Id";
-        await _db.Connection.ExecuteAsync(sqlUpdate, new { Username = user.Username, PasswordHash = user.PasswordHash, Id = user.Id });
-        return user;
+        await _db.InsertMinorHeadAsync(1, user.Username);
+
+        return (user, token);
     }
 }

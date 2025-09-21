@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Backend.Helpers;
+using Backend.Models;
 using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -37,33 +39,21 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(dto.Mobile) || string.IsNullOrWhiteSpace(dto.Otp))
             return BadRequest("Mobile and Otp are required");
 
-        var token = await _authService.ValidateOtpAsync(dto.Mobile, dto.Otp);
-        if (token == null) return Unauthorized("Invalid OTP");
-        return Ok(new { token });
-    }
-
-    // api/auth/update
-    [HttpPost("update")]
-    [Authorize]
-    public async Task<IActionResult> Update([FromBody] UpdateUserDto dto)
-    {
-        var userIdStr = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userIdStr == null) return Unauthorized();
-        if (!int.TryParse(userIdStr, out var userId)) return Unauthorized();
+        var User = await _authService.ValidateOtpAsync(dto.Mobile, dto.Otp);
+        if (User == null) return Unauthorized("Invalid OTP");
 
         if (dto.Username is not null && string.IsNullOrWhiteSpace(dto.Username))
             return BadRequest("Username cannot be whitespace");
         if (dto.Password is not null && dto.Password.Length < 6)
             return BadRequest("Password must be at least 6 chars");
 
-        var updated = await _authService.UpdateUserAsync(userId, dto.Username, dto.Password);
-        if (updated == null) return NotFound();
+        var user = await _authService.UpdateUserAsync(User.Id, dto.Username, dto.Password, dto.Department);
+        if (user.Value.user == null) return NotFound();
 
-        return Ok(new { updated.Id, updated.Username, updated.Mobile, updated.IsAdmin });
+        return Ok(new { user.Value.user.Id, user.Value.user.Username, user.Value.user.Mobile, user.Value.user.IsAdmin, user.Value.token });
     }
 }
 
 public record RequestOtpDto(string Mobile);
-public record ValidateOtpDto(string Mobile, string Otp);
-public record UpdateUserDto(string? Username, string? Password);
+public record ValidateOtpDto(string Mobile, string Otp, string? Username, string? Password, int? Department);
  
