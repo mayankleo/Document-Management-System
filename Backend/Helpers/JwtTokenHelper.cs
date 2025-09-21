@@ -19,7 +19,8 @@ public static class JwtTokenHelper
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim("mobile", user.Mobile ?? ""),
             new Claim("username", user.Username ?? ""),
-            new Claim("isAdmin", user.IsAdmin.ToString())
+            // normalize to lowercase because policy expects "true"
+            new Claim("isAdmin", user.IsAdmin ? "true" : "false")
         };
 
         var token = new JwtSecurityToken(

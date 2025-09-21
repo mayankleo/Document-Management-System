@@ -100,36 +100,40 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task<(User user, string token)?> UpdateUserAsync(int userId, string? newUsername, string? newPassword, int? Department)
+    public async Task<(User user, string token)?> UpdateUserAsync(int userId, string? newUsername, string? newPassword, int? departmentId)
     {
         var sqlGet = "SELECT * FROM Users WHERE Id = @Id LIMIT 1";
         var user = await _db.Connection.QueryFirstOrDefaultAsync<User>(sqlGet, new { Id = userId });
         if (user == null) return null;
 
-        bool needUpdate = false;
-        string? hash = null;
-
-        if (!string.IsNullOrWhiteSpace(newUsername) && newUsername != user.Username)
+        if (user.Username == null && user.PasswordHash == null)
         {
-            user.Username = newUsername.Trim();
-            needUpdate = true;
-        }
+            if (newUsername==null || newUsername==null || departmentId==null) return null;
+            bool needUpdate = false;
+            string? hash = null;
 
-        if (!string.IsNullOrWhiteSpace(newPassword))
-        {
-            hash = BCrypt.Net.BCrypt.HashPassword(newPassword);
-            user.PasswordHash = hash;
-            needUpdate = true;
-        }
+            if (!string.IsNullOrWhiteSpace(newUsername) && newUsername != user.Username)
+            {
+                user.Username = newUsername.Trim();
+                needUpdate = true;
+            }
 
-        if (needUpdate)
-        {
-            var sqlUpdate = "UPDATE Users SET Username = @Username, PasswordHash = @PasswordHash WHERE Id = @Id";
-            await _db.Connection.ExecuteAsync(sqlUpdate, new { Username = user.Username, PasswordHash = user.PasswordHash, Id = user.Id });
+            if (!string.IsNullOrWhiteSpace(newPassword))
+            {
+                hash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+                user.PasswordHash = hash;
+                needUpdate = true;
+            }
+
+            if (needUpdate)
+            {
+                var sqlUpdate = "UPDATE Users SET Username = @Username, PasswordHash = @PasswordHash, DepartmentId = @DepartmentId WHERE Id = @Id";
+                await _db.Connection.ExecuteAsync(sqlUpdate, new { Username = user.Username, PasswordHash = user.PasswordHash, Id = user.Id, DepartmentId = departmentId });
+            }
+
+            await _db.InsertMinorHeadAsync(1, user.Username);
         }
         var token = JwtTokenHelper.GenerateToken(user, _cfg);
-
-        await _db.InsertMinorHeadAsync(1, user.Username);
 
         return (user, token);
     }

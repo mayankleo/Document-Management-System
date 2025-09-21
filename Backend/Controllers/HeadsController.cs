@@ -21,7 +21,6 @@ public class HeadsController : ControllerBase
     }
 
     [HttpGet("minor/{majorHeadId:int}")]
-    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> GetByMajor(int majorHeadId)
     {
         var list = await _db.GetMinorHeadsByMajorAsync(majorHeadId);
