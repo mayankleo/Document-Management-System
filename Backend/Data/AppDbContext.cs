@@ -95,6 +95,12 @@ public class AppDbContext : IDisposable
         return await _connection.QueryFirstOrDefaultAsync<User>(sql, new { Mobile = mobile });
     }
 
+    public async Task<User?> GetUserByIdAsync(int id)
+    {
+        var sql = "SELECT * FROM Users WHERE Id = @Id LIMIT 1";
+        return await _connection.QueryFirstOrDefaultAsync<User>(sql, new { Id = id });
+    }
+
     public async Task<int> InsertUserAsync(User user)
     {
         var sql = @"INSERT INTO Users (Username, Mobile, PasswordHash, IsAdmin)
@@ -110,10 +116,10 @@ public class AppDbContext : IDisposable
         return await _connection.QueryAsync<Tag>(sql);
     }
 
-    public async Task<int> InsertTagAsync(string tagName)
+    public async Task<int> InsertTagAsync(string tagName, IDbTransaction? transaction = null)
     {
         var sql = @"INSERT INTO Tags (Name) VALUES (@Name); SELECT LAST_INSERT_ID();";
-        return await _connection.ExecuteScalarAsync<int>(sql, new { Name = tagName });
+        return await _connection.ExecuteScalarAsync<int>(sql, new { Name = tagName }, transaction);
     }
 
     // ---------- MAJOR / MINOR HEADS ----------
@@ -123,10 +129,48 @@ public class AppDbContext : IDisposable
         return await _connection.QueryAsync<MajorHead>(sql);
     }
 
+    public async Task<MajorHead?> GetMajorHeadsByIdAsync(int id)
+    {
+        var sql = "SELECT * FROM MajorHeads WHERE Id=@Id";
+        return await _connection.QueryFirstOrDefaultAsync<MajorHead>(sql, new { Id = id });
+    }
+
+    public async Task<int> InsertMajorHeadAsync(string name)
+    {
+        var sql = @"INSERT INTO MajorHeads (Name) VALUES (@Name); SELECT LAST_INSERT_ID();";
+        return await _connection.ExecuteScalarAsync<int>(sql, new { Name = name });
+    }
+
+    public async Task<bool> DeleteMajorHeadAsync(int id)
+    {
+        var sql = "DELETE FROM MajorHeads WHERE Id = @Id";
+        var rows = await _connection.ExecuteAsync(sql, new { Id = id });
+        return rows > 0;
+    }
+
     public async Task<IEnumerable<MinorHead>> GetMinorHeadsByMajorAsync(int majorHeadId)
     {
         var sql = "SELECT * FROM MinorHeads WHERE MajorHeadId = @MajorHeadId";
         return await _connection.QueryAsync<MinorHead>(sql, new { MajorHeadId = majorHeadId });
+    }
+
+    public async Task<MinorHead?> GetMinorHeadsByIdAsync(int id)
+    {
+        var sql = "SELECT * FROM MinorHeads WHERE Id=@Id";
+        return await _connection.QueryFirstOrDefaultAsync<MinorHead>(sql, new { Id = id });
+    }
+
+    public async Task<int> InsertMinorHeadAsync(int majorHeadId, string name)
+    {
+        var sql = @"INSERT INTO MinorHeads (MajorHeadId, Name) VALUES (@MajorHeadId, @Name); SELECT LAST_INSERT_ID();";
+        return await _connection.ExecuteScalarAsync<int>(sql, new { MajorHeadId = majorHeadId, Name = name });
+    }
+
+    public async Task<bool> DeleteMinorHeadAsync(int id)
+    {
+        var sql = "DELETE FROM MinorHeads WHERE Id = @Id";
+        var rows = await _connection.ExecuteAsync(sql, new { Id = id });
+        return rows > 0;
     }
 
     // ---------- DOCUMENTS ----------
@@ -137,21 +181,22 @@ public class AppDbContext : IDisposable
         try
         {
             var sqlDoc = @"INSERT INTO Documents 
-                            (FileName, FilePath, ContentType, Size, UploadedBy, MajorHeadId, MinorHeadId, Remarks, UploadedAt, UploadedBy)
-                           VALUES (@FileName, @FilePath, @ContentType, @Size, @UploadedBy, @MajorHeadId, @MinorHeadId, @Remarks, @UploadedAt, @UploadedBy);
+                            (FileName, FilePath, ContentType, Size, MajorHeadId, MinorHeadId, Remarks, DocumentDate, UploadedAt, UploadedBy)
+                           VALUES (@FileName, @FilePath, @ContentType, @Size, @MajorHeadId, @MinorHeadId, @Remarks, @DocumentDate, @UploadedAt, @UploadedBy);
                            SELECT LAST_INSERT_ID();";
 
             var documentId = await _connection.ExecuteScalarAsync<int>(sqlDoc, doc, transaction);
 
             foreach (var tagName in tags)
             {
+                if (string.IsNullOrWhiteSpace(tagName)) continue;
                 var tag = await _connection.QueryFirstOrDefaultAsync<Tag>(
                     "SELECT * FROM Tags WHERE Name = @Name", new { Name = tagName }, transaction);
 
                 int tagId;
                 if (tag == null)
                 {
-                    tagId = await InsertTagAsync(tagName);
+                    tagId = await InsertTagAsync(tagName, transaction);
                 }
                 else
                 {
