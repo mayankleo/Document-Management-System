@@ -37,9 +37,9 @@ public class DocumentsController : ControllerBase
 
     [HttpPost("upload")]
     [Authorize]
+    [RequestSizeLimit(10*1024*1024)]
     public async Task<IActionResult> Upload([FromForm] UploadDocumentRequest request)
     {
-        HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>()!.MaxRequestBodySize = _maxFileSize * 1024 * 1024;
         if (request.File == null || request.File.Length == 0)
             return BadRequest("File is required");
 
@@ -57,12 +57,11 @@ public class DocumentsController : ControllerBase
             return Unauthorized("User does not exist");
 
         var savedFileName = await _fileService.SaveFileAsync(request.File);
-        var fileUrl = _fileService.GetFileUrl(savedFileName);
 
         var document = new Document
         {
-            FileName = request.File.FileName,
-            FilePath = fileUrl,
+            FileOriginalName = request.File.FileName,
+            FileName = savedFileName,
             ContentType = request.File.ContentType,
             Size = request.File.Length,
             MajorHeadId = request.MajorHeadId,
@@ -76,7 +75,7 @@ public class DocumentsController : ControllerBase
         var tags = request.Tags ?? new List<string>();
         var docId = await _db.InsertDocumentAsync(document, tags);
 
-        return Ok(new { Id = docId, FileName = savedFileName, Url = fileUrl });
+        return Ok(new { Id = docId, FileName = savedFileName});
     }
 
     [HttpGet]
@@ -87,8 +86,8 @@ public class DocumentsController : ControllerBase
         var result = docs.Select(d => new
         {
             d.Id,
+            d.FileOriginalName,
             d.FileName,
-            d.FilePath,
             d.ContentType,
             d.Size,
             d.Remarks,
@@ -111,8 +110,8 @@ public class DocumentsController : ControllerBase
         var result = new
         {
             doc.Id,
+            doc.FileOriginalName,
             doc.FileName,
-            doc.FilePath,
             doc.ContentType,
             doc.Size,
             doc.Remarks,
@@ -157,7 +156,7 @@ public class DocumentsController : ControllerBase
             foreach (var fileName in request.FileNames.Distinct())
             {
                 var path = _fileService.GetPhysicalFilePath(fileName);
-                if (!System.IO.File.Exists(path)) continue; // skip missing
+                if (!System.IO.File.Exists(path)) continue;
                 var entry = archive.CreateEntry(fileName, CompressionLevel.Fastest);
                 await using var entryStream = entry.Open();
                 await using var fileStream = System.IO.File.OpenRead(path);

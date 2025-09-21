@@ -44,8 +44,6 @@ public class FileService : IFileService
         return false;
     }
 
-    public string GetFileUrl(string fileName) => $"/uploads/{fileName}";
-
     public string GetPhysicalFilePath(string fileName) => Path.Combine(_uploadsPath, fileName);
 }
 

@@ -3,8 +3,8 @@
 public class Document
 {
     public int Id { get; set; }
+    public string FileOriginalName { get; set; } = null!;
     public string FileName { get; set; } = null!;
-    public string FilePath { get; set; } = null!;
     public string ContentType { get; set; } = null!;
     public long Size { get; set; }
     public DateTime UploadedAt { get; set; } = DateTime.UtcNow;

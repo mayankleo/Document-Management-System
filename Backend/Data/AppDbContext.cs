@@ -63,8 +63,8 @@ public class AppDbContext : IDisposable
         _connection.Execute(@"
             CREATE TABLE IF NOT EXISTS Documents (
                 Id INT AUTO_INCREMENT PRIMARY KEY,
-                FileName VARCHAR(255) NOT NULL,
-                FilePath VARCHAR(500) NOT NULL,
+                FileOriginalName VARCHAR(255) NOT NULL,
+                FileName VARCHAR(500) NOT NULL,
                 ContentType VARCHAR(100) NOT NULL,
                 Size BIGINT NOT NULL,
                 MajorHeadId INT NOT NULL,
@@ -181,8 +181,8 @@ public class AppDbContext : IDisposable
         try
         {
             var sqlDoc = @"INSERT INTO Documents 
-                            (FileName, FilePath, ContentType, Size, MajorHeadId, MinorHeadId, Remarks, DocumentDate, UploadedAt, UploadedBy)
-                           VALUES (@FileName, @FilePath, @ContentType, @Size, @MajorHeadId, @MinorHeadId, @Remarks, @DocumentDate, @UploadedAt, @UploadedBy);
+                            (FileOriginalName, FileName, ContentType, Size, MajorHeadId, MinorHeadId, Remarks, DocumentDate, UploadedAt, UploadedBy)
+                           VALUES (@FileOriginalName, @FileName, @ContentType, @Size, @MajorHeadId, @MinorHeadId, @Remarks, @DocumentDate, @UploadedAt, @UploadedBy);
                            SELECT LAST_INSERT_ID();";
 
             var documentId = await _connection.ExecuteScalarAsync<int>(sqlDoc, doc, transaction);
@@ -239,8 +239,8 @@ public class AppDbContext : IDisposable
                 doc = new Document
                 {
                     Id = row.Id,
+                    FileOriginalName = row.FileOriginalName,
                     FileName = row.FileName,
-                    FilePath = row.FilePath,
                     ContentType = row.ContentType,
                     Size = row.Size,
                     MajorHeadId = row.MajorHeadId,
@@ -295,8 +295,8 @@ public class AppDbContext : IDisposable
                 doc = new Document
                 {
                     Id = row.Id,
+                    FileOriginalName = row.FileOriginalName,
                     FileName = row.FileName,
-                    FilePath = row.FilePath,
                     ContentType = row.ContentType,
                     Size = row.Size,
                     MajorHeadId = row.MajorHeadId,
