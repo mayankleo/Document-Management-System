@@ -21,6 +21,7 @@ public class HeadsController : ControllerBase
     }
 
     [HttpGet("minor/{majorHeadId:int}")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> GetByMajor(int majorHeadId)
     {
         var list = await _db.GetMinorHeadsByMajorAsync(majorHeadId);
@@ -30,6 +31,7 @@ public class HeadsController : ControllerBase
     public record CreateMinorHeadRequest(int MajorHeadId, string Name);
 
     [HttpPost("minor")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Create(CreateMinorHeadRequest req)
     {
         if (string.IsNullOrWhiteSpace(req.Name)) return BadRequest("Name required");
@@ -38,6 +40,7 @@ public class HeadsController : ControllerBase
     }
 
     [HttpDelete("minor/{id:int}")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Delete(int id)
     {
         var ok = await _db.DeleteMinorHeadAsync(id);

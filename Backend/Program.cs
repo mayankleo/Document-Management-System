@@ -69,7 +69,13 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+// Authorization with AdminOnly policy (isAdmin claim must be "true")
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("isAdmin", "true"));
+});
 
 var app = builder.Build();
 

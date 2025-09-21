@@ -11,6 +11,7 @@ namespace Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class DocumentsController : ControllerBase
 {
     private readonly IFileService _fileService;
@@ -35,8 +36,8 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpPost("upload")]
-    [Authorize]
-    [RequestSizeLimit(10*1024*1024)]
+    [Authorize(Policy = "AdminOnly")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<IActionResult> Upload([FromForm] UploadDocumentRequest request)
     {
         if (request.File == null || request.File.Length == 0)
@@ -78,7 +79,6 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize]
     public async Task<IActionResult> GetAll()
     {
         var docs = await _db.GetAllDocumentsAsync();
@@ -101,7 +101,6 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    [Authorize]
     public async Task<IActionResult> GetById(int id)
     {
         var doc = await _db.GetDocumentByIdAsync(id);
@@ -125,7 +124,6 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet("search")]
-    [Authorize]
     public async Task<IActionResult> Search([FromQuery] int? majorHeadId, [FromQuery] int? minorHeadId, [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] string? tags)
     {
         var tagList = string.IsNullOrWhiteSpace(tags) ? null : tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
@@ -149,7 +147,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet("tags")]
-    [Authorize]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> GetTags()
     {
         var tags = await _db.GetTagsAsync();
@@ -157,7 +155,6 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet("download/{fileName}")]
-    [Authorize]
     public IActionResult Download(string fileName)
     {
         if (string.IsNullOrWhiteSpace(fileName)) return BadRequest();
@@ -176,7 +173,6 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpPost("download/zip")]
-    [Authorize]
     public async Task<IActionResult> DownloadZip([FromBody] BulkDownloadRequest request)
     {
         if (request.FileNames == null || request.FileNames.Count == 0) return BadRequest("No files specified");
@@ -200,7 +196,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpDelete("{fileName}")]
-    [Authorize]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Delete(string fileName)
     {
         var deleted = await _fileService.DeleteFileAsync(fileName);

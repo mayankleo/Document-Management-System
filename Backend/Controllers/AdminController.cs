@@ -6,7 +6,7 @@ namespace Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = "AdminOnly")]
 public class AdminController : ControllerBase
 {
     private readonly IAuthService _authService;
@@ -20,10 +20,6 @@ public class AdminController : ControllerBase
     [HttpPost("create-user")]
     public async Task<IActionResult> CreateAdminUser([FromBody] CreateAdminDto dto)
     {
-        var isAdminClaim = User.Claims.FirstOrDefault(c => c.Type == "isAdmin")?.Value;
-        if (!bool.TryParse(isAdminClaim, out var isAdmin) || !isAdmin)
-            return Forbid();
-
         if (string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password))
             return BadRequest("Username and Password required");
 
