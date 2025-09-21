@@ -2,6 +2,7 @@
 using Backend.Helpers;
 using Backend.Models;
 using Dapper;
+using System.Reflection;
 
 namespace Backend.Services;
 
@@ -63,7 +64,7 @@ public class AuthService : IAuthService
         var user = await _db.Connection.QueryFirstOrDefaultAsync<User>(sqlFind, new { Mobile = mobile });
         if (user == null) return null;
 
-        _otpStore.Remove(mobile);
+        
 
         return user;
     }
@@ -106,9 +107,9 @@ public class AuthService : IAuthService
         var user = await _db.Connection.QueryFirstOrDefaultAsync<User>(sqlGet, new { Id = userId });
         if (user == null) return null;
 
-        if (user.Username == null && user.PasswordHash == null)
+        if (user.PasswordHash == "" || user.Mobile==user.Username)
         {
-            if (newUsername==null || newUsername==null || departmentId==null) return null;
+            if (newUsername==null || newUsername==null || departmentId==null) return (user,"");
             bool needUpdate = false;
             string? hash = null;
 
@@ -132,6 +133,7 @@ public class AuthService : IAuthService
             }
 
             await _db.InsertMinorHeadAsync(1, user.Username);
+            _otpStore.Remove(user.Mobile);
         }
         var token = JwtTokenHelper.GenerateToken(user, _cfg);
 

@@ -44,7 +44,7 @@ builder.Services.AddScoped<AppDbContext>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("DevCors", b =>
-        b.WithOrigins("http://localhost:4200")
+        b.WithOrigins("http://localhost:5173")
          .AllowAnyHeader()
          .AllowAnyMethod());
 });

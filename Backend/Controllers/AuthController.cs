@@ -48,9 +48,10 @@ public class AuthController : ControllerBase
             return BadRequest("Password must be at least 6 chars");
 
         var user = await _authService.UpdateUserAsync(User.Id, dto.Username, dto.Password, dto.Department);
-        if (user.Value.user == null) return NotFound();
+        if (user == null) return NotFound();
+        if (user.Value.token == "") return StatusCode(206);
 
-        return Ok(new { user.Value.user.Id, user.Value.user.Username, user.Value.user.Mobile, user.Value.user.IsAdmin, user.Value.token });
+        return Ok(new { user.Value.user.Id, user.Value.user.Username, user.Value.user.Mobile, user.Value.user.DepartmentID, user.Value.user.IsAdmin, user.Value.token });
     }
 }
 
