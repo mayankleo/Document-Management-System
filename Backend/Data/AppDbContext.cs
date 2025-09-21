@@ -1,9 +1,9 @@
 ﻿using System.Data;
 using Dapper;
 using MySqlConnector;
-using DMS_Backend.Models;
+using Backend.Models;
 
-namespace DMS_Backend.Data;
+namespace Backend.Data;
 
 public class AppDbContext : IDisposable
 {

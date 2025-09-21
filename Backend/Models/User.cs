@@ -1,4 +1,4 @@
-﻿namespace DMS_Backend.Models;
+﻿namespace Backend.Models;
 
 public class User
 {
