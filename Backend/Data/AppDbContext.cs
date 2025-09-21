@@ -328,30 +328,75 @@ public class AppDbContext : IDisposable
         return lookup.Values;
     }
 
-    // ---------- DOCUMENT TAGS ----------
-    private async Task LinkDocumentTagAsync(int documentId, int tagId, IDbTransaction transaction)
+    public async Task<IEnumerable<Document>> SearchDocumentsWithDetailsAsync(int? majorHeadId, int? minorHeadId, DateTime? from, DateTime? to, IEnumerable<string>? tags = null)
     {
-        var sql = @"INSERT INTO DocumentTags (DocumentId, TagId) VALUES (@DocumentId, @TagId)";
-        await _connection.ExecuteAsync(sql, new { DocumentId = documentId, TagId = tagId }, transaction);
-    }
-
-    public async Task<IEnumerable<Document>> SearchDocumentsAsync(int? majorHeadId, int? minorHeadId, DateTime? from, DateTime? to, IEnumerable<string>? tags = null)
-    {
-        var sql = @"SELECT DISTINCT d.* 
+        var sql = @"SELECT d.*, 
+                           mh.Id   AS MH_Id, mh.Name AS MH_Name,
+                           mi.Id   AS MI_Id, mi.MajorHeadId AS MI_MajorHeadId, mi.Name AS MI_Name,
+                           t.Id    AS Tag_Id, t.Name AS Tag_Name
                     FROM Documents d
+                    JOIN MajorHeads mh ON d.MajorHeadId = mh.Id
+                    JOIN MinorHeads mi ON d.MinorHeadId = mi.Id
                     LEFT JOIN DocumentTags dt ON d.Id = dt.DocumentId
                     LEFT JOIN Tags t ON dt.TagId = t.Id
                     WHERE (@MajorHeadId IS NULL OR d.MajorHeadId = @MajorHeadId)
                       AND (@MinorHeadId IS NULL OR d.MinorHeadId = @MinorHeadId)
                       AND (@From IS NULL OR d.UploadedAt >= @From)
                       AND (@To IS NULL OR d.UploadedAt <= @To)";
-
         if (tags != null && tags.Any())
         {
             sql += " AND t.Name IN @Tags";
         }
+        sql += " ORDER BY d.UploadedAt DESC, d.Id DESC";
 
-        return await _connection.QueryAsync<Document>(sql, new { MajorHeadId = majorHeadId, MinorHeadId = minorHeadId, From = from, To = to, Tags = tags });
+        var lookup = new Dictionary<int, Document>();
+        var rows = await _connection.QueryAsync(sql, new { MajorHeadId = majorHeadId, MinorHeadId = minorHeadId, From = from, To = to, Tags = tags });
+        foreach (var row in rows)
+        {
+            int docId = row.Id;
+            if (!lookup.TryGetValue(docId, out var doc))
+            {
+                doc = new Document
+                {
+                    Id = row.Id,
+                    FileOriginalName = row.FileOriginalName,
+                    FileName = row.FileName,
+                    ContentType = row.ContentType,
+                    Size = row.Size,
+                    MajorHeadId = row.MajorHeadId,
+                    MinorHeadId = row.MinorHeadId,
+                    Remarks = row.Remarks ?? string.Empty,
+                    DocumentDate = row.DocumentDate,
+                    UploadedAt = row.UploadedAt,
+                    UploadedBy = row.UploadedBy,
+                    MajorHead = new MajorHead { Id = row.MH_Id, Name = row.MH_Name },
+                    MinorHead = new MinorHead { Id = row.MI_Id, MajorHeadId = row.MI_MajorHeadId, Name = row.MI_Name },
+                    DocumentTags = new List<DocumentTag>()
+                };
+                lookup[docId] = doc;
+            }
+            if (row.Tag_Id != null)
+            {
+                int tagId = row.Tag_Id;
+                if (!lookup[docId].DocumentTags.Any(dt => dt.TagId == tagId))
+                {
+                    lookup[docId].DocumentTags.Add(new DocumentTag
+                    {
+                        DocumentId = docId,
+                        TagId = tagId,
+                        Tag = new Tag { Id = tagId, Name = row.Tag_Name }
+                    });
+                }
+            }
+        }
+        return lookup.Values;
+    }
+
+    // ---------- DOCUMENT TAGS ----------
+    private async Task LinkDocumentTagAsync(int documentId, int tagId, IDbTransaction transaction)
+    {
+        var sql = @"INSERT INTO DocumentTags (DocumentId, TagId) VALUES (@DocumentId, @TagId)";
+        await _connection.ExecuteAsync(sql, new { DocumentId = documentId, TagId = tagId }, transaction);
     }
 
     public void Dispose()

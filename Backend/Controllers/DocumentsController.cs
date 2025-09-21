@@ -125,6 +125,38 @@ public class DocumentsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("search")]
+    [Authorize]
+    public async Task<IActionResult> Search([FromQuery] int? majorHeadId, [FromQuery] int? minorHeadId, [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] string? tags)
+    {
+        var tagList = string.IsNullOrWhiteSpace(tags) ? null : tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+        var docs = await _db.SearchDocumentsWithDetailsAsync(majorHeadId, minorHeadId, from, to, tagList);
+        var result = docs.Select(d => new
+        {
+            d.Id,
+            d.FileOriginalName,
+            d.FileName,
+            d.ContentType,
+            d.Size,
+            d.Remarks,
+            d.DocumentDate,
+            d.UploadedAt,
+            d.UploadedBy,
+            MajorHead = new { d.MajorHead.Id, d.MajorHead.Name },
+            MinorHead = new { d.MinorHead.Id, d.MinorHead.MajorHeadId, d.MinorHead.Name },
+            Tags = d.DocumentTags.Select(dt => dt.Tag.Name).ToList()
+        });
+        return Ok(result);
+    }
+
+    [HttpGet("tags")]
+    [Authorize]
+    public async Task<IActionResult> GetTags()
+    {
+        var tags = await _db.GetTagsAsync();
+        return Ok(tags.Select(t => new { t.Id, t.Name }));
+    }
+
     [HttpGet("download/{fileName}")]
     [Authorize]
     public IActionResult Download(string fileName)
