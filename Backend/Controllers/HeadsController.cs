@@ -7,12 +7,20 @@ namespace Backend.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class MinorHeadsController : ControllerBase
+public class HeadsController : ControllerBase
 {
     private readonly AppDbContext _db;
-    public MinorHeadsController(AppDbContext db) => _db = db;
+    public HeadsController(AppDbContext db) => _db = db;
 
-    [HttpGet("major/{majorHeadId:int}")]
+
+    [HttpGet("major")]
+    public async Task<IActionResult> GetAll()
+    {
+        var list = await _db.GetMajorHeadsAsync();
+        return Ok(list);
+    }
+
+    [HttpGet("minor/{majorHeadId:int}")]
     public async Task<IActionResult> GetByMajor(int majorHeadId)
     {
         var list = await _db.GetMinorHeadsByMajorAsync(majorHeadId);
@@ -21,7 +29,7 @@ public class MinorHeadsController : ControllerBase
 
     public record CreateMinorHeadRequest(int MajorHeadId, string Name);
 
-    [HttpPost]
+    [HttpPost("minor")]
     public async Task<IActionResult> Create(CreateMinorHeadRequest req)
     {
         if (string.IsNullOrWhiteSpace(req.Name)) return BadRequest("Name required");
@@ -29,7 +37,7 @@ public class MinorHeadsController : ControllerBase
         return Ok(new { Id = id, req.Name, req.MajorHeadId });
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpDelete("minor/{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
         var ok = await _db.DeleteMinorHeadAsync(id);
