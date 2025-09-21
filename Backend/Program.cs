@@ -39,7 +39,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.AddScoped<IAuthService, AuthService>();
-//builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<AppDbContext>();
 builder.Services.AddCors(options =>
 {
