@@ -47,12 +47,62 @@ export default function HomePage() {
         </div>
 
         <section className="mt-10 bg-white rounded shadow p-6">
-          <h2 className="text-lg font-semibold mb-3 text-gray-800">Quick Tips</h2>
+          <h2 className="text-lg font-semibold mb-3 text-gray-800">Features</h2>
           <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-            <li>Use the Search page to filter by heads, tags, and date ranges.</li>
+            <li>Use the Document page to search and download relevant documents with powerful filters.</li>
             <li>Bulk select documents in Search to download a ZIP archive.</li>
-            <li>Uploading supports PDF and common image formats; add tags for easier discovery.</li>
-            {user?.isAdmin && <li>As an admin you can create users and upload documents.</li>}
+            <li>Uploading supports all file but preview supported only for PDF and common image formats; add tags for easier discovery.</li>
+            <li>Only admin can create admin users and upload documents.</li>
+            <li>Admin can preview and download all uploaded documents.</li>
+            <li>Normal user can preview and download relevant documents Uploaded by admin.</li>
+            <li>Clean, simple, professional, user friendly and responsive interface.</li>
+            <li>Profile page allows users to view their account information.</li>
+            <li>Easy login and registration process with Mobile Number.</li>
+            <li>Strong authentication and authorization Route mechanisms in place.</li>
+          </ul>
+          <h2 className="text-lg font-semibold my-3 text-gray-800">Tech Stack</h2>
+          <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+            <li>
+              Frontend:
+              <ul className="list-disc list-inside ml-5">
+                <li>React</li>
+                <li>TypeScript</li>
+                <li>Tailwind CSS</li>
+                <li>Libraries:
+                  <ul className="list-disc list-inside ml-5">
+                    <li>Axios</li>
+                    <li>React Router</li>
+                    <li>Redux Toolkit</li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+            <li>
+              Backend:
+              <ul className="list-disc list-inside ml-5">
+                <li>.NET Core</li>
+              </ul>
+            </li>
+            <li>
+              Database:
+              <ul className="list-disc list-inside ml-5">
+                <li>MySQL</li>
+              </ul>
+            </li>
+            <li>
+              Authentication:
+              <ul className="list-disc list-inside ml-5">
+                <li>JSON Web Tokens (JWT)</li>
+                <li>bcrypt</li>
+              </ul>
+            </li>
+            <li>
+              Version Control:
+              <ul className="list-disc list-inside ml-5">
+                <li>Git</li>
+                <li>GitHub</li>
+              </ul>
+            </li>
           </ul>
         </section>
       </div>

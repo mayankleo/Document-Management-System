@@ -5,7 +5,6 @@ import { getMajorHeads, getMinorHeads } from '../api/headsApi';
 import { searchDocuments, downloadFile, downloadZip, listDocuments } from '../api/documentsApi';
 import type { MajorHead, MinorHead, DocumentItem } from '../models';
 
-// Lightweight inline spinner (avoids external dependency / missing component)
 function Spinner({ size = 'xs', invert = false }: { size?: 'xs' | 'sm' | 'md'; invert?: boolean }) {
   const dim = size === 'md' ? 'h-5 w-5' : size === 'sm' ? 'h-4 w-4' : 'h-3 w-3';
   const color = invert ? 'border-white border-t-transparent' : 'border-indigo-500 border-t-transparent';
@@ -34,7 +33,6 @@ const SearchPage = () => {
   const [info, setInfo] = useState('');
   const [showFilters, setShowFilters] = useState(true);
 
-  // Derived label logic (if you later decide to show these fields to non-admins with different labels)
   const majorLabel = isAdmin ? 'Major Head' : 'Category';
   const minorLabel = isAdmin ? 'Minor Head' : 'Sub Category';
 
@@ -277,7 +275,7 @@ const SearchPage = () => {
 
       {preview && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={closePreview}>
-          <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full max-h-[92vh] flex flex-col animate-fade-in" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full h-full flex flex-col animate-fade-in" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b px-4 py-2 text-sm bg-gray-50">
               <span className="font-medium truncate pr-2" title={preview.name}>{preview.name}</span>
               <div className="flex gap-2">
