@@ -446,8 +446,8 @@ public class AppDbContext : IDisposable
                     LEFT JOIN Tags t ON dt.TagId = t.Id
                     WHERE (@MajorHeadId IS NULL OR d.MajorHeadId = @MajorHeadId)
                       AND (@MinorHeadId IS NULL OR d.MinorHeadId = @MinorHeadId)
-                      AND (@From IS NULL OR d.UploadedAt >= @From)
-                      AND (@To IS NULL OR d.UploadedAt <= @To)";
+                      AND (@From IS NULL OR d.DocumentDate >= @From)
+                      AND (@To IS NULL OR d.DocumentDate <= @To)";
         if (tags != null && tags.Any())
         {
             sql += " AND t.Name IN @Tags";
