@@ -6,7 +6,6 @@ namespace Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class HeadsController : ControllerBase
 {
     private readonly AppDbContext _db;
