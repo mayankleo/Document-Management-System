@@ -117,21 +117,25 @@ const LoginPage = () => {
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">Login With Your Mobile Number</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">Login and Register <br /> With Your Mobile Number</h1>
           <p className="text-sm text-gray-600">Secure OTP sign-in. Fast and passwordless.</p>
         </div>
 
         <StepIndicator current={step} />
 
         {step === 'mobile' && (
-          <form onSubmit={handleRequestOtp} className="bg-white border rounded-lg shadow-sm p-6 space-y-5">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium uppercase tracking-wide text-gray-600">Mobile <span className="text-red-600">*</span></label>
-              <input className={`border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 ${!validMobile && mobile ? 'border-red-500' : 'border-gray-300'}`} value={mobile} onChange={e => setMobile(e.target.value)} placeholder="Enter mobile number" />
-            </div>
-            <button className="w-full px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium disabled:opacity-50" type="submit" disabled={loading || !validMobile}>{loading ? 'Requesting...' : 'Request OTP'}</button>
-            {error && <p className="text-sm text-red-600">{error}</p>}
-          </form>
+          <>
+            <form onSubmit={handleRequestOtp} className="bg-white border rounded-lg shadow-sm p-6 space-y-5">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium uppercase tracking-wide text-gray-600">Mobile <span className="text-red-600">*</span></label>
+                <input className={`border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 ${!validMobile && mobile ? 'border-red-500' : 'border-gray-300'}`} value={mobile} onChange={e => setMobile(e.target.value)} placeholder="Enter mobile number" />
+              </div>
+              <button className="w-full px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium disabled:opacity-50" type="submit" disabled={loading || !validMobile}>{loading ? 'Requesting...' : 'Request OTP'}</button>
+              {error && <p className="text-sm text-red-600">{error}</p>}
+            </form>
+            
+            <TestAccountsSection onSelectMobile={(mobile) => setMobile(mobile)} />
+          </>
         )}
 
         {step === 'otp' && (
@@ -206,6 +210,73 @@ function StepIndicator({ current }: { current: Step }) {
         );
       })}
     </ol>
+  );
+}
+
+function TestAccountsSection({ onSelectMobile }: { onSelectMobile: (mobile: string) => void }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  const testAccounts = [
+    { type: 'Admin', username: 'admin', password: 'admin', mobile: '9993339996' },
+    { type: 'User', username: 'john', password: 'john', mobile: '1234567890' },
+    { type: 'User', username: 'tom', password: 'tom', mobile: '5554445555' },
+    { type: 'User', username: 'emily', password: 'emily', mobile: '9996669999' },
+  ];
+
+  return (
+    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
+      <button 
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center justify-between w-full text-left"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-amber-600 text-sm font-medium">Accounts</span>
+          <span className="text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded">For Testing purposes</span>
+        </div>
+        <span className="text-amber-600 text-sm">{isExpanded ? 'Hide' : 'Show'}</span>
+      </button>
+      
+      {isExpanded && (
+        <div className="space-y-2">
+          <p className="text-xs text-amber-700 mb-3">These are registered accounts you can also create new one</p>
+          <div className="grid gap-2">
+            {testAccounts.map((account, index) => (
+              <div key={index} className="bg-white border border-amber-200 rounded p-3 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
+                    account.type === 'Admin' 
+                      ? 'bg-red-100 text-red-700' 
+                      : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {account.type}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onSelectMobile(account.mobile)}
+                    className="text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-2 py-1 rounded transition"
+                  >
+                    Use This Account
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <span className="text-gray-500">Username:</span>
+                    <div className="font-mono font-medium">{account.username}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Mobile:</span>
+                    <div className="font-mono font-medium cursor-pointer hover:text-indigo-600" onClick={() => onSelectMobile(account.mobile)}>
+                      {account.mobile}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
