@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import type { AxiosInstance } from 'axios';
 
-const baseUrl = 'https://localhost:7097/api';
+const baseUrl = 'http://localhost:7097/api';
 
 let authToken: string | null = null;
 
