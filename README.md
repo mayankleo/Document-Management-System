@@ -206,10 +206,11 @@ npm run dev
 
 Visit: http://localhost:5173
 
-### 4. Login
+### 4. Login And Register
 
-- Use default admin credentials `9993339996` as admin mobile number (as mentioned in backend/appsettings.json)
-- Create additional admins via Admin UI endpoint
+- Use default pre-registered accounts for testing purposes (this default account can be managed from backend/appsettings.json folder)
+- New user can also register from the same page
+- Create additional admins via Admin UI endpoint if needed
 
 ## ▶️ Running (Subsequent)
 
