@@ -1,7 +1,8 @@
-﻿using System.Data;
+﻿using Backend.Models;
 using Dapper;
 using MySqlConnector;
-using Backend.Models;
+using System.Data;
+using System.Xml.Linq;
 
 namespace Backend.Data;
 
@@ -92,15 +93,16 @@ public class AppDbContext : IDisposable
 
 
     // DBinit
-    private void SeedFromConfiguration(IConfiguration config)
+    private async void SeedFromConfiguration(IConfiguration config)
     {
         var dbInitSection = config.GetSection("DBinit");
         if (!dbInitSection.Exists()) return;
 
         var majorDefs = dbInitSection.GetSection("Majors").Get<List<MajorSeed>>() ?? new();
         var adminDefs = dbInitSection.GetSection("Admins").Get<List<AdminSeed>>() ?? new();
+        var userDefs = dbInitSection.GetSection("User").Get<List<AdminSeed>>() ?? new();
 
-        using var tx = _connection.BeginTransaction();
+        var tx = _connection.BeginTransaction();
         try
         {
             foreach (var major in majorDefs)
@@ -134,7 +136,8 @@ public class AppDbContext : IDisposable
                     }
                 }
             }
-
+            tx.Commit();
+            tx = _connection.BeginTransaction();
             foreach (var admin in adminDefs)
             {
                 if (string.IsNullOrWhiteSpace(admin.Mobile) ||
@@ -154,6 +157,29 @@ public class AppDbContext : IDisposable
                           VALUES (@Username, @Mobile, @PasswordHash, TRUE);
                           SELECT LAST_INSERT_ID();",
                         new { Username = admin.Username, Mobile = admin.Mobile, PasswordHash = hash }, tx);
+                }
+            }
+
+            foreach (var user in userDefs)
+            {
+                if (string.IsNullOrWhiteSpace(user.Mobile) ||
+                    string.IsNullOrWhiteSpace(user.Username) ||
+                    string.IsNullOrWhiteSpace(user.Password))
+                    continue;
+
+                var userExists = _connection.ExecuteScalar<int>(
+                    "SELECT COUNT(*) FROM Users WHERE Mobile=@Mobile OR Username=@Username",
+                    new { user.Mobile, user.Username }, tx);
+
+                if (userExists == 0)
+                {
+                    var hash = BCrypt.Net.BCrypt.HashPassword(user.Password);
+                    var newUserId = _connection.ExecuteScalar<int>(
+                        @"INSERT INTO Users (Username, Mobile, PasswordHash, IsAdmin)
+                          VALUES (@Username, @Mobile, @PasswordHash, FALSE);
+                          SELECT LAST_INSERT_ID();",
+                        new { Username = user.Username, Mobile = user.Mobile, PasswordHash = hash }, tx);
+                    _connection.ExecuteScalar<int>(@"INSERT INTO MinorHeads (MajorHeadId, Name) VALUES (@MajorHeadId, @Name); SELECT LAST_INSERT_ID();", new { MajorHeadId = 1, Name = user.Username }, tx);
                 }
             }
 
