@@ -194,7 +194,7 @@ Backend will:
 - Create DB `mydmsdb` if missing
 - Run table creation
 - Seed data (if configured)
-- Expose Swagger at https://localhost:7097/swagger (port may vary)
+- Expose Swagger at http://localhost:7097/swagger (port may vary)
 
 ### 3. Frontend Setup
 
