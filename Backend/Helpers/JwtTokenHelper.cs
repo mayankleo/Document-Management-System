@@ -14,20 +14,26 @@ public static class JwtTokenHelper
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var claims = new[]
+        var now = DateTime.UtcNow;
+        var expiryMinutes = double.Parse(jwt["ExpiryMinutes"]);
+        var expires = now.AddMinutes(expiryMinutes);
+
+        var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim("mobile", user.Mobile ?? ""),
             new Claim("username", user.Username ?? ""),
-            // normalize to lowercase because policy expects "true"
-            new Claim("isAdmin", user.IsAdmin ? "true" : "false")
+            new Claim("isAdmin", user.IsAdmin ? "true" : "false"),
+            // issued at (numeric date per RFC7519)
+            new Claim(JwtRegisteredClaimNames.Iat, ((DateTimeOffset)now).ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
 
         var token = new JwtSecurityToken(
             issuer: jwt["Issuer"],
             audience: jwt["Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(double.Parse(jwt["ExpiryMinutes"])),
+            notBefore: now,
+            expires: expires,
             signingCredentials: creds
         );
 
