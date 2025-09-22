@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import UploadPage from './pages/UploadPage';
 import SearchPage from './pages/SearchPage';
-import AdminPage from './pages/AdminPage';
+import CreateAdminPage from './pages/CreateAdminPage';
 import HomePage from './pages/HomePage';
 import AppLayout from './components/AppLayout';
 import ProfilePage from './pages/ProfilePage';
@@ -22,7 +22,7 @@ const App = () => {
             <Route path="/documents" element={<SearchPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route element={<AdminRoute />}> 
-              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/create-admin" element={<CreateAdminPage />} />
               <Route path="/upload" element={<UploadPage />} />
             </Route>
           </Route>

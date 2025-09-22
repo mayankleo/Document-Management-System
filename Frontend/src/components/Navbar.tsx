@@ -31,7 +31,7 @@ export default function Navbar() {
                 <NavLink to="/upload" className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Upload</NavLink>
               )}
               {user?.isAdmin && (
-                <NavLink to="/admin" className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Admin</NavLink>
+                <NavLink to="/create-admin" className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Create Admin</NavLink>
               )}
             </div>
           </div>
