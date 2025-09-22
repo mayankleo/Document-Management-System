@@ -7,6 +7,8 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.UseUrls("http://localhost:7097");
+
 var config = builder.Configuration;
 
 builder.Services.AddControllers();
@@ -92,8 +94,6 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();
-
-app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
